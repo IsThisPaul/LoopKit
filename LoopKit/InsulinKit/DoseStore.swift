@@ -202,7 +202,7 @@ public final class DoseStore {
     ///   - syncVersion: A version number for determining resolution in de-duplication
     ///   - lastPumpEventsReconciliation: The date the PumpManger last reconciled with the pump
     ///   - provenanceIdentifier: An id to store with new doses, indicating the provenance of the dose, usually the app's bundle identifier.
-    ///   - readyCallback: A closure that will be called after initialization.
+    ///   - onReady: A closure that will be called after initialization.
     ///   - test_currentDate: Used for testing to mock current time
     public init(
         healthStore: HKHealthStore,
@@ -1586,7 +1586,7 @@ extension DoseStore: CriticalEventLog {
         return result!
     }
 
-    public func export(startDate: Date, endDate: Date, to stream: OutputStream, progress: Progress) -> Error? {
+    public func export(startDate: Date, endDate: Date, to stream: DataOutputStream, progress: Progress) -> Error? {
         let encoder = JSONStreamEncoder(stream: stream)
         var modificationCounter: Int64 = 0
         var fetching = true

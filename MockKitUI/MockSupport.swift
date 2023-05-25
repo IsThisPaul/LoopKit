@@ -32,15 +32,17 @@ public class MockSupport: SupportUI {
         rawValue["lastVersionCheckAlertDate"] = lastVersionCheckAlertDate
         return rawValue
     }
+
+    public func initializationComplete(for services: [LoopKit.Service]) { }
    
-    public func checkVersion(bundleIdentifier: String, currentVersion: String, completion: @escaping (Result<VersionUpdate?, Error>) -> Void) {
-        maybeIssueAlert(versionUpdate ?? .none)
-        completion(.success(versionUpdate))
+    public func checkVersion(bundleIdentifier: String, currentVersion: String) async -> VersionUpdate? {
+        maybeIssueAlert(versionUpdate ?? .noUpdateNeeded)
+        return versionUpdate
     }
     
     public weak var delegate: SupportUIDelegate?
 
-    public func configurationMenuItems() -> [AnyView] {
+    public func configurationMenuItems() -> [LoopKitUI.CustomMenuItem] {
         return []
     }
 
@@ -55,6 +57,14 @@ public class MockSupport: SupportUI {
             }
         )
     }
+    
+    public func getScenarios(from scenarioURLs: [URL]) -> [LoopScenario] {
+        scenarioURLs.map { LoopScenario(name: $0.lastPathComponent, url: $0) }
+    }
+    
+    public func loopWillReset() {}
+    
+    public func loopDidReset() {}
 }
 
 extension MockSupport {
