@@ -9,6 +9,9 @@
 import Foundation
 import HealthKit
 
+public struct InsulinMath {
+    public static var defaultInsulinActivityDuration: TimeInterval = TimeInterval(hours: 6) + TimeInterval(minutes: 10)
+}
 
 extension DoseEntry {
     private func continuousDeliveryInsulinOnBoard(at date: Date, model: InsulinModel, delta: TimeInterval) -> Double {
@@ -255,7 +258,7 @@ extension DoseEntry {
     /// If the dose crosses a schedule boundary, it will be split into multiple doses so each dose has a
     /// single scheduled basal rate.
     ///
-    /// - Parameter basalHistory: The history of basal schedule valures to apply.  Only schedule values overlapping the dose should be included.
+    /// - Parameter basalHistory: The history of basal schedule values to apply. Only schedule values overlapping the dose should be included.
     /// - Returns: An array of annotated doses
     fileprivate func annotated(with basalHistory: [AbsoluteScheduleValue<Double>]) -> [DoseEntry] {
 
@@ -522,7 +525,7 @@ extension Collection where Element == DoseEntry {
     ///
     /// - Parameter basalSchedule: The basal rate schedule
     /// - Returns: An array of annotated dose entries
-    func annotated(with basalSchedule: BasalRateSchedule) -> [DoseEntry] {
+    public func annotated(with basalSchedule: BasalRateSchedule) -> [DoseEntry] {
         var annotatedDoses: [DoseEntry] = []
 
         for dose in self {
@@ -573,8 +576,8 @@ extension Collection where Element == DoseEntry {
      - returns: A sequence of insulin amount remaining
      */
     public func insulinOnBoard(
-        insulinModelProvider: InsulinModelProvider,
-        longestEffectDuration: TimeInterval,
+        insulinModelProvider: InsulinModelProvider = PresetInsulinModelProvider(defaultRapidActingModel: nil),
+        longestEffectDuration: TimeInterval = InsulinMath.defaultInsulinActivityDuration,
         from start: Date? = nil,
         to end: Date? = nil,
         delta: TimeInterval = TimeInterval(5*60)
@@ -628,7 +631,9 @@ extension Collection where Element == DoseEntry {
 
         repeat {
             let value = reduce(0) { (value, dose) -> Double in
-                return value + dose.glucoseEffect(at: date, model: insulinModelProvider.model(for: dose.insulinType), insulinSensitivity: insulinSensitivity.quantity(at: dose.startDate).doubleValue(for: unit), delta: delta)
+                let isf = insulinSensitivity.quantity(at: dose.startDate).doubleValue(for: unit)
+                let doseEffect = dose.glucoseEffect(at: date, model: insulinModelProvider.model(for: dose.insulinType), insulinSensitivity: isf, delta: delta)
+                return value + doseEffect
             }
 
             values.append(GlucoseEffect(startDate: date, quantity: HKQuantity(unit: unit, doubleValue: value)))
@@ -645,7 +650,7 @@ extension Collection where Element == DoseEntry {
     ///   - longestEffectDuration: The longest duration that a dose could be active.
     ///   - insulinSensitivityHistory: The timeline of glucose effect per unit of insulin
     ///   - start: The earliest date of effects to return
-    ///   - end: The latest date of effects to return
+    ///   - end: The latest date of effects to return. If nil is passed, it will be calculated from the last sample end date plus the longestEffectDuration.
     ///   - delta: The interval between returned effects
     /// - Returns: An array of glucose effects for the duration of the doses
     public func glucoseEffects(
@@ -672,11 +677,11 @@ extension Collection where Element == DoseEntry {
         repeat {
             let value = reduce(0) { (value, dose) -> Double in
 
-                guard let isf = insulinSensitivityHistory.closestPrior(to: dose.startDate), isf.endDate >= dose.startDate else {
+                guard let isfScheduleValue = insulinSensitivityHistory.closestPrior(to: dose.startDate), isfScheduleValue.endDate >= dose.startDate else {
                     preconditionFailure("ISF History must cover dose startDates")
                 }
-                let doseEffect = dose.glucoseEffect(at: date, model: insulinModelProvider.model(for: dose.insulinType), insulinSensitivity: isf.value.doubleValue(for: unit), delta: delta)
-                //print("dose insulin effect \(date) = \(doseEffect) isf=\(isf.value.doubleValue(for: unit)) dose.startDate=\(dose.startDate)")
+                let isf = isfScheduleValue.value.doubleValue(for: unit)
+                let doseEffect = dose.glucoseEffect(at: date, model: insulinModelProvider.model(for: dose.insulinType), insulinSensitivity: isf, delta: delta)
                 return value + doseEffect
             }
 
@@ -700,8 +705,8 @@ extension Collection where Element == DoseEntry {
     ///   - delta: The interval between returned effects
     /// - Returns: An array of glucose effects for the duration of the doses
     public func glucoseEffects(
-        insulinModelProvider: InsulinModelProvider,
-        longestEffectDuration: TimeInterval,
+        insulinModelProvider: InsulinModelProvider = PresetInsulinModelProvider(defaultRapidActingModel: nil),
+        longestEffectDuration: TimeInterval = InsulinMath.defaultInsulinActivityDuration,
         insulinSensitivityTimeline: [AbsoluteScheduleValue<HKQuantity>],
         from start: Date? = nil,
         to end: Date? = nil,
@@ -757,8 +762,8 @@ extension Collection where Element == DoseEntry {
     ///   - delta: The interval below which to consider doses as momentary
     /// - Returns: An array of glucose effects for the duration of the doses
     public func glucoseEffects(
-        insulinModelProvider: InsulinModelProvider,
-        longestEffectDuration: TimeInterval,
+        insulinModelProvider: InsulinModelProvider = PresetInsulinModelProvider(defaultRapidActingModel: nil),
+        longestEffectDuration: TimeInterval = InsulinMath.defaultInsulinActivityDuration,
         insulinSensitivityTimeline: [AbsoluteScheduleValue<HKQuantity>],
         effectDates: [Date],
         delta: TimeInterval = TimeInterval(/* minutes: */60 * 5)
@@ -858,7 +863,7 @@ extension Collection where Element == DoseEntry {
             case .resume:
                 assertionFailure("No resume events should be present in reconciled doses")
             case .bolus:
-                break //newEntries.append(dose)
+                break
             }
         }
 
