@@ -56,16 +56,19 @@ public protocol SupportUIDelegate: AlertIssuer, SupportInfoProvider  {
     func openURL(url: URL)
 }
 
-public protocol SupportUI: AnyObject {
+public struct DeviceWhitelist: Hashable {
+    public let cgmDevices: [String]
+    public let pumpDevices: [String]
+    
+    public init(cgmDevices: [String] = [], pumpDevices: [String] = []) {
+        self.cgmDevices = cgmDevices
+        self.pumpDevices = pumpDevices
+    }
+}
+
+public protocol SupportUI: Pluggable {
 
     typealias RawStateValue = [String: Any]
-
-    /// The unique identifier of this type of support.
-    static var supportIdentifier: String { get }
-
-    /// Support plugins often depend on other services.  This callback allows supports to reference the needed service(s).
-    /// It is called once during app initialization after  services are initialized and again as new services are added and initialized.
-    func initializationComplete(for services: [Service])
 
     /// Provides configuration menu items.
     ///
@@ -122,10 +125,18 @@ public protocol SupportUI: AnyObject {
  
     /// A delegate for SupportUI to use (see `SupportUIDelegate`).
     var delegate: SupportUIDelegate? { get set }
+    
+    var showsDeleteTestDataUI: Bool { get }
+    
+    var deviceIdentifierWhitelist: DeviceWhitelist { get }
 }
 
-extension SupportUI {
-    public var identifier: String {
-        return Self.supportIdentifier
+extension SupportUI {    
+    public var deviceIdentifierWhitelist: DeviceWhitelist {
+        DeviceWhitelist()
+    }
+    
+    public var showsDeleteTestDataUI: Bool {
+        true
     }
 }

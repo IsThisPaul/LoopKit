@@ -27,11 +27,15 @@ struct MockPumpManagerSettingsView: View {
 
     private var supportedInsulinTypes: [InsulinType]
     private var appName: String
+    private let allowDebugFeatures : Bool
+    private var title: String
     
-    init(pumpManager: MockPumpManager, supportedInsulinTypes: [InsulinType], appName: String) {
+    init(pumpManager: MockPumpManager, supportedInsulinTypes: [InsulinType], appName: String, allowDebugFeatures: Bool) {
         viewModel = MockPumpManagerSettingsViewModel(pumpManager: pumpManager)
+        title = pumpManager.localizedTitle
         self.supportedInsulinTypes = supportedInsulinTypes
         self.appName = appName
+        self.allowDebugFeatures = allowDebugFeatures
     }
     
     var body: some View {
@@ -46,7 +50,7 @@ struct MockPumpManagerSettingsView: View {
         }
         .insetGroupedListStyle()
         .navigationBarItems(trailing: doneButton)
-        .navigationBarTitle(Text("Pump Simulator"), displayMode: .large)
+        .navigationBarTitle(Text(title), displayMode: .large)
         .alert(item: $presentedAlert, content: alert(for:))
     }
     
@@ -95,7 +99,7 @@ struct MockPumpManagerSettingsView: View {
     
     private var expirationText: some View {
         Text("Pump expires in ")
-            .font(.system(size: 15, weight: .medium, design: .default))
+            .font(.subheadline)
             .foregroundColor(.secondary)
     }
     
@@ -123,6 +127,11 @@ struct MockPumpManagerSettingsView: View {
     
     @ViewBuilder
     private var activitySection: some View {
+
+        if (allowDebugFeatures) {
+            settingsSubSection
+        }
+
         suspendResumeInsulinSubSection
 
         deviceDetailsSubSection
@@ -188,6 +197,14 @@ struct MockPumpManagerSettingsView: View {
         }
     }
 
+    private var settingsSubSection: some View {
+        Section {
+            NavigationLink(destination: MockPumpManagerControlsView(pumpManager: viewModel.pumpManager, supportedInsulinTypes: supportedInsulinTypes)) {
+                Text("Simulator Settings")
+            }
+        }
+    }
+
     @ViewBuilder
     private var configurationSection: some View {
         notificationSubSection
@@ -205,7 +222,7 @@ struct MockPumpManagerSettingsView: View {
     
     private var pumpTimeSubSection: some View {
         Section {
-            LabeledValueView(label: "Pump Time", value: viewModel.pumpTimeString)
+            TimeView(label: "Pump Time")
         }
     }
     
@@ -250,6 +267,6 @@ extension MockPumpManagerSettingsView.PresentedAlert: Identifiable {
 
 struct MockPumpManagerSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        MockPumpManagerSettingsView(pumpManager: MockPumpManager(), supportedInsulinTypes: [], appName: "Loop")
+        MockPumpManagerSettingsView(pumpManager: MockPumpManager(), supportedInsulinTypes: [], appName: "Loop", allowDebugFeatures: false)
     }
 }
