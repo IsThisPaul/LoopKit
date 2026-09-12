@@ -3524,11 +3524,10 @@
 				vi,
 				cs,
 				ar,
-				hi,
 				sk,
-				ce,
 				hu,
 				uk,
+				ko,
 			);
 			mainGroup = 43D8FDC11C728FDF0073BE78;
 			packageReferences = (
@@ -4916,7 +4915,7 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
-				WATCHOS_DEPLOYMENT_TARGET = 6.1;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
 			};
 			name = Debug;
 		};
@@ -4980,7 +4979,7 @@
 				VALIDATE_PRODUCT = YES;
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
-				WATCHOS_DEPLOYMENT_TARGET = 6.1;
+				WATCHOS_DEPLOYMENT_TARGET = 9.0;
 			};
 			name = Release;
 		};
